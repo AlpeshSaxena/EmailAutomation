@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Mail,
@@ -7,6 +8,8 @@ import {
   ClipboardList,
   Settings,
   Zap,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 const navItems = [
@@ -19,12 +22,16 @@ const navItems = [
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { theme, setTheme } = useTheme();
+
+  const isDark = theme === "dark";
 
   return (
     <div className="flex h-screen bg-background">
       <aside className="w-64 border-r border-border bg-card flex flex-col shrink-0">
+        {/* Logo */}
         <div className="flex items-center gap-2.5 px-6 py-5 border-b border-border">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <Zap className="w-4 h-4 text-primary-foreground" />
           </div>
           <div>
@@ -32,6 +39,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <p className="text-xs text-muted-foreground">Email Automation</p>
           </div>
         </div>
+
+        {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5">
           {navItems.map(({ label, href, icon: Icon }) => {
             const isActive =
@@ -55,8 +64,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">MailFlow AI v1.0</p>
+
+        {/* Dark mode toggle */}
+        <div className="p-3 border-t border-border">
+          <button
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            {isDark ? (
+              <Sun className="w-4 h-4 shrink-0" />
+            ) : (
+              <Moon className="w-4 h-4 shrink-0" />
+            )}
+            {isDark ? "Light Mode" : "Dark Mode"}
+          </button>
         </div>
       </aside>
 
