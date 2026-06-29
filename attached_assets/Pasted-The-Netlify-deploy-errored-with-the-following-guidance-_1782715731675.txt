@@ -1,0 +1,82 @@
+The Netlify deploy errored, with the following guidance provided:
+
+Diagnosis
+- The provided log excerpt ends at "Installing dependencies" and does not include the actual error lines, so I cannot isolate the exact failing lines from the build output you pasted. The failure is happening during dependency installation / build setup on Netlify, but the log excerpt is incomplete and does not show the error message that caused the build to fail.
+
+Solution — what to do now (how to get the error and common fixes)
+1) Provide the full failing log (or open the deploy details in Netlify and copy the full log). I need the lines after "Installing dependencies" to point at the exact error. If you prefer to debug yourself first, continue with the steps below.
+
+2) Quick checks (do these first)
+- Verify package.json is present in the repo root and contains the expected dependencies and build script:
+  - File: https://github.com/AlpeshSaxena/EmailAutomation/blob/main/package.json
+  - If package.json is missing or incomplete, Netlify cannot install dependencies. Add/commit it and redeploy.
+- Make sure lockfile (package-lock.json or yarn.lock) is committed — this helps reproducible installs.
+- Confirm your Netlify Build settings:
+  - Build command: e.g., npm run build (must match a script in package.json)
+  - Publish directory: must match your build output (e.g., build, dist). Set in Site settings > Build & deploy.
+
+3) Reproduce locally to get the full error
+- Clone repo and run:
+```bash
+git clone https://github.com/AlpeshSaxena/EmailAutomation
+cd EmailAutomation
+# If you use npm:
+npm ci
+npm run build
+# OR if you use yarn:
+yarn install --frozen-lockfile
+yarn build
+```
+- Copy the terminal error and paste it here if it still fails. That output will contain the exact failing lines.
+
+4) Common causes and specific fixes (pick the one that matches the full error you will paste)
+- Missing dependency listed in import error (e.g., "Cannot find module 'X'"):
+  - Verify the package appears in package.json dependencies/devDependencies. If not, add it:
+  ```bash
+  npm install --save <package-name>
+  git add package.json package-lock.json
+  git commit -m "Add missing dependency <package-name>"
+  git push
+  ```
+  - Then redeploy.
+
+- Private registry / auth failure during install:
+  - Ensure npm auth tokens or Netlify environment variables are set (NPM_TOKEN or .npmrc). See your private package provider docs and Netlify env var settings.
+
+- Node version mismatch (build fails with Node-related errors):
+  - Set Node version either via package.json "engines", or add a .nvmrc or .node-version file to the repo and commit it. Then redeploy.
+  - See Netlify docs for changing Node versions: https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript
+
+- Build tool errors (Vite/Rollup/ESM issues like "unexpected token 'export' in dependency" or “Cannot resolve ...”):
+  - If the error asks you to add a package or file to build.rollupOptions.external (or similar), first verify that the package is present in package.json or the file is committed to the repo. If it is missing, add/commit it. Only after confirming the package/file exists should you add it to rollupOptions.external in your Vite/Rollup config to avoid bundling it.
+  - Example: in vite.config.js you might add:
+  ```js
+  // vite.config.js
+  export default {
+    build: {
+      rollupOptions: {
+        external: ['some-external-package']
+      }
+    }
+  }
+  ```
+  - But again: first confirm the package is declared in package.json or the file is in the repo.
+
+5) If you still can’t resolve, paste the full error section of the Netlify log (from "Installing dependencies" through the failure) and I will:
+- isolate the exact failing lines,
+- identify the error type & cause,
+- provide a precise code/config change and example patch to fix it.
+
+Summary: I cannot isolate the failing lines from the provided truncated log. Please run the local reproduction steps or paste the full Netlify deploy log (the lines after "Installing dependencies") so I can give the exact fix. If you suspect Node version issues, consult https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript and add .nvmrc or engines in package.json.
+
+The relevant error logs are:
+
+Line 0: build-image version: cbbb2660d860fe70694043ec05851a3910a2bf39 (noble-new-builds)
+Line 1: buildbot version: 863d78834c7df98fbadcc32a31460eb244115cc2
+Line 2: Fetching cached dependencies
+Line 3: Failed to fetch cache, continuing with build
+Line 4: Starting to prepare the repo for build
+Line 5: No cached dependencies found. Cloning fresh repo
+Line 6: git clone --filter=blob:none https://github.com/AlpeshSaxena/EmailAutomation
+Line 7: Preparing Git Reference refs/heads/main
+Line 8: Installing dependencies
