@@ -1,0 +1,2 @@
+- [MailFlow API URL pattern](mailflow-api-url.md) — generated URLs already include /api prefix; do NOT call setBaseUrl in main.tsx
+- [Orval hook query options](orval-query-options.md) — TanStack Query v5 requires queryKey in UseQueryOptions; pass getXxxQueryKey() alongside enabled
