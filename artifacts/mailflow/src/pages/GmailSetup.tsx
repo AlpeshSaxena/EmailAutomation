@@ -196,7 +196,9 @@ export default function GmailSetup() {
                   <code className="text-xs bg-muted px-2 py-0.5 rounded">{key}</code>
                   <span className="text-xs text-muted-foreground ml-2">{label}</span>
                 </div>
-                {status?.configured ? (
+                {isLoading ? (
+                  <Skeleton className="h-5 w-16" />
+                ) : status?.configured ? (
                   <Badge variant="outline" className="text-xs text-green-600 border-green-300">
                     <CheckCircle className="w-3 h-3 mr-1" /> Set
                   </Badge>
