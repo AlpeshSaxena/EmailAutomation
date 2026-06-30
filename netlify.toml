@@ -1,0 +1,25 @@
+[build]
+  command = "pnpm --filter @workspace/mailflow run build && node artifacts/api-server/build-netlify.mjs"
+  publish = "artifacts/mailflow/dist/public"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "9"
+  NODE_ENV = "production"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "none"
+
+# API routes → serverless function (preserves full /api/... path)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+
+# SPA fallback — all other routes serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
