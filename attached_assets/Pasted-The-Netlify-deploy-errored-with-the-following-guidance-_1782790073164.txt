@@ -1,0 +1,80 @@
+The Netlify deploy errored, with the following guidance provided:
+
+Diagnosis
+- The install fails because pnpm refuses to do a frozen installation when the lockfile and your package configuration disagree. The pnpm error is shown at [line 22](#L22) and pnpm even suggests the fix at [line 23](#L23). The build aborts during dependency installation ([line 18](#L18), [line 24](#L24), [line 25](#L25)).
+- Netlify also detected a pnpm version difference and prepared pnpm@9 for the build ([line 17](#L17)); this means you should update the lockfile with the same pnpm toolchain that Netlify uses (or make Netlify use the same pnpm you used locally).
+- There is also a warning that NODE_ENV is set to production so devDependencies won’t be installed ([line 16](#L16)). That’s not the immediate failure, but could cause missing build tools later if your build needs devDependencies.
+
+Solution
+1) Regenerate and commit an updated lockfile (recommended)
+- Locally, ensure you run pnpm using a version compatible with what the build expects. Netlify prepared pnpm@9.15.9 in the logs; you can activate that locally:
+```bash
+# using corepack (recommended)
+corepack prepare pnpm@9.15.9 --activate
+
+# or install globally (alternative)
+npm install -g pnpm@9.15.9
+```
+- Regenerate the lockfile (this matches the suggestion in the logs):
+```bash
+pnpm install --no-frozen-lockfile
+```
+- Review changes, then commit the updated pnpm-lock.yaml (and package.json if it changed):
+```bash
+git add pnpm-lock.yaml package.json
+git commit -m "Regenerate pnpm lockfile to match overrides/config"
+git push
+```
+- Trigger a Netlify rebuild. The frozen install error should be resolved because the lockfile now matches package configuration.
+
+2) If you intentionally want to keep the lockfile unchanged
+- Revert whatever change introduced the mismatch (for example, ensure package.json "overrides" matches the lockfile). Then commit and push so the lockfile and package.json are consistent.
+
+3) (Optional) If your build needs devDependencies
+- If your build requires devDependencies to be installed, either move the required items from devDependencies to dependencies or configure Netlify to install them by changing the build environment variable:
+- In Netlify UI > Site settings > Build & deploy > Environment, set NODE_ENV = development
+- Or add to netlify.toml:
+```toml
+[build.environment]
+  NODE_ENV = "development"
+```
+Note: Netlify sets NODE_ENV=production by default ([line 16](#L16)), which will skip devDependencies during install.
+
+4) Verify pnpm version consistency (recommended)
+- Ensure you and CI use the same pnpm major version. Use corepack to pin the project pnpm version or document the required pnpm version for contributors/CI. This avoids subtle differences when generating lockfiles (the logs show Netlify adjusted pnpm to v9 to match expected [line 17](#L17)).
+
+After regenerating and committing the updated lockfile, rebuild on Netlify. If you still see the same error, run a local check:
+```bash
+pnpm install --frozen-lockfile
+```
+If that fails locally, the problem must be corrected locally (package.json vs lockfile) before Netlify can install dependencies successfully.
+
+The relevant error logs are:
+
+Line 0: build-image version: cbbb2660d860fe70694043ec05851a3910a2bf39 (noble-new-builds)
+Line 1: buildbot version: 863d78834c7df98fbadcc32a31460eb244115cc2
+Line 2: Fetching cached dependencies
+Line 3: Failed to fetch cache, continuing with build
+Line 4: Starting to prepare the repo for build
+Line 5: No cached dependencies found. Cloning fresh repo
+Line 6: git clone --filter=blob:none https://github.com/AlpeshSaxena/EmailAutomation
+Line 7: Preparing Git Reference refs/heads/main
+Line 8: Installing dependencies
+Line 9: mise ~/.config/mise/config.toml tools: python@3.14.3
+Line 10: mise ~/.config/mise/config.toml tools: ruby@3.4.8
+Line 11: mise ~/.config/mise/config.toml tools: go@1.26.2
+Line 12: Attempting Node.js version '20' from .nvmrc
+Line 13: v20.20.2 is already installed.
+Line 14: Now using node v20.20.2 (npm v10.8.2)
+Line 15: Enabling Node.js Corepack
+Line 16: WARNING: The environment variable 'NODE_ENV' is set to 'production'. Any 'devDependencies' in package.json will not be installed
+Line 17: Found pnpm version (10.30.3) that doesn't match expected (9)
+Preparing pnpm@9 for immediate activation...
+Line 18: Failed during stage 'Install dependencies': dependency_installation script returned non-zero exit code: 1
+Line 19: pnpm workspaces detected
+Line 20: Installing npm packages using pnpm version 9.15.9
+Line 21: Scope: all 9 workspace projects
+Line 22:  ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  Cannot proceed with the frozen installation. The current "overrides" configuration doesn't m
+Line 23: Update your lockfile using "pnpm install --no-frozen-lockfile"
+Line 24: Error during pnpm install
+Line 25: Failing build: Failed to install dependencies

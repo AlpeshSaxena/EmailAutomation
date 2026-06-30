@@ -4,8 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  PNPM_VERSION = "9"
-  NODE_ENV = "production"
+  PNPM_VERSION = "10"
+  # NODE_ENV intentionally omitted — leaving it unset allows pnpm to install
+  # devDependencies (vite, esbuild, etc.) that are required by the build step.
 
 [functions]
   directory = "netlify/functions"
